@@ -13,7 +13,7 @@ class Topology:
     def get_switches(self):
         switches = dict()
         for swid in range(1, self.num_switch + 1):
-            switches[f's{swid}'] = {'runtime_json': f's{swid}-runtime.json'}
+            switches[f's{swid}'] = {'runtime_json': f'topo/s{swid}-runtime.json'}
         self.switches = switches
     
     def get_hosts(self):
@@ -58,7 +58,7 @@ class Topology:
                 json.dump(output, f, indent='\t')
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(description='P4 Mininet Topology Generator')
     parser.add_argument('-S', '--num-switch', type=int, required=True,  metavar='N', 
                         help='Number of switches in your topology (Max: 9)')
@@ -71,6 +71,7 @@ def main():
     parser.add_argument('-t', '--topo-path',  type=str, required=False, metavar='FILE', 
                         help='Path to save the topology')
     args = parser.parse_args()
+
     assert args.num_switch<=9, "Maximum number of switches: 9"
     assert args.num_host<=5,   "Maximum number of hosts: 5"
     if args.links is not None:
@@ -80,6 +81,12 @@ def main():
             args.switch_links = f.readline()
     else:
         raise Exception('Both `--links` and `--links-file` are not defined')
+    
+    return args
+    
+
+def main():
+    args = parse_args()
 
     topo = Topology(args.num_switch, args.num_host)
     topo.append_links(args.switch_links)
