@@ -13,7 +13,7 @@ from scapy.all import (
     sendp
 )
 
-from runtime_generator import TopologyParser
+from utils.TopologyParser import TopologyParser
 
 
 class SourceRoute(Packet):
@@ -23,11 +23,11 @@ class SourceRoute(Packet):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='P4 Source Routing Sender')
-    parser.add_argument('-T', '--topo-path', type=str, required=True,  metavar='<path>', 
-                        help='path to the json topology file')
     parser.add_argument('-t', '--target', type=str, required=True,  metavar='<dst>', 
                         help='the target IP address or the target host name')
-    parser.add_argument('-i', '--interface', type=str, required=False,  default='eth0', dest='iface', metavar='<iface>', 
+    parser.add_argument('-T', '--topo-path', type=str, required=False, default='topo/topology.json', metavar='<path>', 
+                        help='path to the json topology file')
+    parser.add_argument('-i', '--interface', type=str, required=False, default='eth0', dest='iface', metavar='<iface>', 
                         help='the gateway interface name')
     args = parser.parse_args()
     return args

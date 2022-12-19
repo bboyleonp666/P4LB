@@ -1,7 +1,6 @@
-import json
-import argparse
-import networkx as nx
 import re
+import json
+import networkx as nx
 
 class TopologyParser:
     def __init__(self, topo_path):
@@ -95,27 +94,3 @@ class TopologyParser:
     def check_ipv4(self, addr):
         pattern = r"^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$"
         assert re.match(pattern=pattern, string=addr) is not None, f"'{addr}' is not a valid IPv4 address"
-
-            
-def parse_args():
-    parser = argparse.ArgumentParser(description='P4 Mininet Runtime Generator')
-    parser.add_argument('-T', '--topo-path', type=str, required=True,  metavar='<path>', 
-                        help='path to the json topology file')
-    args = parser.parse_args()
-
-    return args
-
-
-def main():
-    args = parse_args()
-
-    topo_parser = TopologyParser(topo_path=args.topo_path)
-    topo_parser.lookup(mode='node')
-    topo_parser.lookup(mode='edge')
-
-    ports = topo_parser.get_route_ports(src='h41', dst='h53')
-    print(ports)
-
-
-if __name__=='__main__':
-    main()
