@@ -1,7 +1,7 @@
 import json
 import argparse
 import networkx as nx
-
+import re
 
 class TopologyParser:
     def __init__(self, topo_path):
@@ -13,6 +13,9 @@ class TopologyParser:
     def parse(self, topo_path):
         with open(topo_path, 'r') as f:
             topo = json.load(f)
+        self.hNames = [host for host in topo['hosts']]
+        self.hIps   = [topo['hosts'][host]['ip'].split('/')[0] for host in topo['hosts']]
+        self.hMacs  = [topo['hosts'][host]['mac'] for host in topo['hosts']]
 
         switch_attrs = {key: dict() for key in topo['switches'].keys()}
         edge_attrs = list()
@@ -34,16 +37,23 @@ class TopologyParser:
         paths = nx.all_pairs_shortest_path(self.topo, cutoff=cutoff)
         self.paths = dict(paths)
 
-    def get_route_ports(self, src, tgt):
-        assert src!=tgt, "Source should not be the same as Target"
-        path = self.paths[src][tgt]
-
-        ports = list()
-        for i, sw in enumerate(path[:-1]):
-            ports.append(self.topo.nodes[path[i]][path[i + 1]])
+    def get_route_ports(self, src, dst):
+        src = self.get_host_addr(src)
+        dst = self.get_host_addr(dst)
+        assert src!=dst, "Source should not be the same as Destination"
         
-        return ports
-    
+        src_sw = self.get_proxy_switch(src)
+        dst_sw = self.get_proxy_switch(dst)
+        if src_sw==dst_sw:
+            # return [int(dst.split('.')[-1]) // 2]
+            return []
+        
+        else:
+            path = self.paths[src_sw][dst_sw]
+            topo = self.topo.nodes
+            ports = [topo[path[i]][path[i+1]] for i, _ in enumerate(path[:-1])]
+            return ports
+
     def lookup(self, mode='node'):
         if mode=='node':
             print('Nodes')
@@ -57,11 +67,39 @@ class TopologyParser:
             print('----------')
             print(self.topo.edges)
             print()
+            
+    def get_host_addr(self, host):
+        assert host[0]!='s', "The input should be host name or IPv4 address, not switch name"
+        if '.' in host:
+            self.check_ipv4(host)
+            return host
 
+        assert host in self.hNames, f"The target '{host}' is not in the topology"
+        return self.hIps[self.hNames.index(host)]
+    
+    def get_host_name(self, host):
+        assert host[0]!='s', "The input should be host name or IPv4 address, not switch name"
+        if host[0]=='h':
+            assert host in self.hNames, f"The target '{host}' is not in the topology"
+            return host
+            
+        self.check_ipv4(host)
+        assert host in self.hIps, f"The target '{host}' is not in the topology"
+        return self.hNames[self.hIps.index(host)]
+    
+    def get_proxy_switch(self, host):
+        addr = self.get_host_addr(host)
+        idx = addr.split('.')[-2]
+        return f's{idx}'
+    
+    def check_ipv4(self, addr):
+        pattern = r"^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$"
+        assert re.match(pattern=pattern, string=addr) is not None, f"'{addr}' is not a valid IPv4 address"
 
+            
 def parse_args():
     parser = argparse.ArgumentParser(description='P4 Mininet Runtime Generator')
-    parser.add_argument('-t', '--topo-path', type=str, required=True,  metavar='<path>', 
+    parser.add_argument('-T', '--topo-path', type=str, required=True,  metavar='<path>', 
                         help='path to the json topology file')
     args = parser.parse_args()
 
@@ -75,10 +113,9 @@ def main():
     topo_parser.lookup(mode='node')
     topo_parser.lookup(mode='edge')
 
-    ports = topo_parser.get_route_ports(src='s4', tgt='s5')
-    print(f's4 -> s5 : {ports}')
-    ports = topo_parser.get_route_ports(src='s1', tgt='s2')
-    print(f's1 -> s2 : {ports}')
+    ports = topo_parser.get_route_ports(src='h41', dst='h53')
+    print(ports)
+
 
 if __name__=='__main__':
     main()

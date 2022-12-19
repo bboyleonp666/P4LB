@@ -4,7 +4,7 @@ NUM_SWITCHES = 5
 NUM_HOSTS = 3
 
 all:
-	python topo_generator.py -S $(NUM_SWITCHES) -H $(NUM_HOSTS) -l $(LINK_FILE) -t $(TOPO)
+	python topo_generator.py -S $(NUM_SWITCHES) -H $(NUM_HOSTS) -l $(LINK_FILE) -T $(TOPO)
 
 clean:
 	rm $(TOPO)

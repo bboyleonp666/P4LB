@@ -68,7 +68,7 @@ def parse_args():
                         help='Links between every two switches separated by comma')
     parser.add_argument('-l', '--links-file', type=str, required=False, metavar='FILE', 
                         help='Links between every two switches separated by comma')
-    parser.add_argument('-t', '--topo-path',  type=str, required=False, metavar='FILE', 
+    parser.add_argument('-T', '--topo-path',  type=str, required=False, metavar='FILE', 
                         help='Path to save the topology')
     args = parser.parse_args()
 
