@@ -5,9 +5,7 @@ import networkx as nx
 class TopologyParser:
     def __init__(self, topo_path):
         self.topo_path = topo_path
-
         self.parse(topo_path)
-        self.compute_shortest_paths()
 
     def parse(self, topo_path):
         with open(topo_path, 'r') as f:
@@ -16,25 +14,56 @@ class TopologyParser:
         self.hIps   = [topo['hosts'][host]['ip'].split('/')[0] for host in topo['hosts']]
         self.hMacs  = [topo['hosts'][host]['mac'] for host in topo['hosts']]
 
-        switch_attrs = {key: dict() for key in topo['switches'].keys()}
-        edge_attrs = list()
+        switches = list(topo['switches'].keys())
+        edges = {key: [key] for key in switches}
+        fwd_ports = {key: dict() for key in switches}
         for l in topo['links']:
             if not l[0][0]=='h':
                 s1, p1 = l[0].split('-')
                 s2, p2 = l[1].split('-')
-                switch_attrs[s1][s2] = int(p1[1:])
-                switch_attrs[s2][s1] = int(p2[1:])
-                edge_attrs.append((s1, s2))
-        node_attrs = [(key, val) for key, val in switch_attrs.items()]
+                edges[s1].append(s2)
+                edges[s2].append(s1)
+                fwd_ports[s1][s2] = int(p1[1:])
+                fwd_ports[s2][s1] = int(p2[1:])
 
-        G = nx.Graph()
-        G.add_nodes_from(node_attrs)
-        G.add_edges_from(edge_attrs)
-        self.topo = G
+        self.switches  = switches
+        self.edges     = edges
+        self.fwd_ports = fwd_ports
+        self.Floyd_Warshall()
 
-    def compute_shortest_paths(self, cutoff=None):
-        paths = nx.all_pairs_shortest_path(self.topo, cutoff=cutoff)
-        self.paths = dict(paths)
+    def Floyd_Warshall(self):
+        """
+        Floyd Warshall all pairs shortest paths algorithm with equal weights
+        """
+        switches = self.switches
+        edges    = self.edges
+        
+        MAX = len(switches) + 1
+        dists = {sw1 : {sw : MAX for sw in switches} for sw1 in switches}
+        paths = {sw1 : {sw : list() for sw in switches} for sw1 in switches}
+
+        for s, dst in edges.items():
+            for d in dst:
+                if not s==d:
+                    dists[s][d] = 1
+                    paths[s][d] = [s, d]
+
+                else:
+                    dists[s][d] = 0
+                    paths[s][d] = [s]
+            
+        for via in switches:
+            for s in switches:
+                for d in switches:
+                    if s==d or s==via or d==via or dists[s][d]<=1:
+                        continue
+                    
+                    if len(paths[s][via])>0 and len(paths[via][d])>0 and (dists[s][via] + 1)<dists[s][d]:
+                        paths[s][d] = paths[s][via] + paths[via][d][1:]
+                        dists[s][d] = dists[s][via] + 1
+        
+        self.dists = dists
+        self.paths = paths
 
     def get_route_ports(self, src, dst):
         src = self.get_host_addr(src)
@@ -49,22 +78,22 @@ class TopologyParser:
         
         else:
             path = self.paths[src_sw][dst_sw]
-            topo = self.topo.nodes
-            ports = [topo[path[i]][path[i+1]] for i, _ in enumerate(path[:-1])]
+            ports = [self.fwd_ports[path[i]][path[i+1]] for i in range(len(path) - 1)]
             return ports
 
     def lookup(self, mode='node'):
         if mode=='node':
             print('Nodes')
             print('----------')
-            for node in self.topo.nodes:
-                print(f'{node} : {self.topo.nodes[node]}')
+            for sw in self.switches:
+                print(f'{sw} : {self.fwd_ports[sw]}')
             print()
 
         elif mode=='edge':
             print('Edges')
             print('----------')
-            print(self.topo.edges)
+            for sw in self.switches:
+                print(f'{sw} : {self.edges[sw]}')
             print()
             
     def get_host_addr(self, host):

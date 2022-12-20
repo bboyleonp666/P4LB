@@ -43,6 +43,7 @@ def main():
 
     topo = TopologyParser(topo_path=args.topo_path)
     src  = get_if_addr(args.iface)
+    # src  = topo.get_host_addr('h21')         # this line is for testing on normal computer instead of mock ones
     dst  = topo.get_host_addr(args.target)
     print("Send on interface '{}' from {} to {}".format(args.iface, src, dst))
 

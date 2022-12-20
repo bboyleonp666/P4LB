@@ -22,9 +22,12 @@ def main():
     args = parse_args()
 
     topo = TopologyParser(topo_path=args.topo_path)
-    for sw in topo.topo.nodes:
+    for sw in topo.switches:
         with open(f'topo/{sw}-runtime.json', 'w') as f:
             json.dump(get_runtime_content(), f, indent='\t')
+    
+    topo.lookup()
+    topo.lookup('edge')
         
 
 if __name__=='__main__':
