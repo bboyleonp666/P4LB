@@ -1,6 +1,5 @@
 import re
 import json
-import networkx as nx
 
 class TopologyParser:
     def __init__(self, topo_path):
@@ -72,14 +71,15 @@ class TopologyParser:
         
         src_sw = self.get_proxy_switch(src)
         dst_sw = self.get_proxy_switch(dst)
+
+        s2h_port = [int(dst.split('.')[-1]) // 2]
         if src_sw==dst_sw:
-            # return [int(dst.split('.')[-1]) // 2]
-            return []
+            return s2h_port
         
         else:
             path = self.paths[src_sw][dst_sw]
             ports = [self.fwd_ports[path[i]][path[i+1]] for i in range(len(path) - 1)]
-            return ports
+            return ports + s2h_port
 
     def lookup(self, mode='node'):
         if mode=='node':
