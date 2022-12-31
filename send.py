@@ -59,7 +59,7 @@ def main():
     pkt = pkt / IP(dst=dst) / UDP(dport=4321, sport=1234)
     pkt.show2()
 
-    # sendp(pkt, iface=args.iface, verbose=False)
+    sendp(pkt, iface=args.iface, verbose=False)
 
 
 if __name__=='__main__':
