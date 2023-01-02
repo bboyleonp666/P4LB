@@ -77,8 +77,12 @@ def parse_args():
     if args.links is not None:
         args.switch_links = args.links
     elif args.links_file is not None:
+        escape = ['\n', ' ', '\t']
         with open(args.links_file, 'r') as f:
-            args.switch_links = f.readline()
+            line = f.readline()
+            for esc in escape:
+                line = line.replace(esc, '')
+            args.switch_links = line
     else:
         raise Exception('Both `--links` and `--links-file` are not defined')
     
