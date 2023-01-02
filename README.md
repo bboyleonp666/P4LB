@@ -25,16 +25,14 @@ p4@p4:~/tutorials/exercises/P4LB # ./receive.py
 6. Send packet from `h21`
 ```
 p4@p4:~/tutorials/exercises/P4LB # ./send.py -t h11
-./send -t h11
 ```
 7. Exit from mininet
 ```
-# Mininet terminal
-exit
+mininet> exit
 ```
 8. To clean all the files generated
 ```
-make myclean
+p4@p4:~/tutorials/exercises $ make myclean
 ```
 
 ## Example
